@@ -29,23 +29,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace pGina.Core.Messages
+namespace pGina.Shared.Types
 {
-    public enum MessageType
+    public class ChangePasswordPluginActivityInfo
     {
-        Unknown         = 0x00,
-        Hello           = 0x01,
-        Disconnect      = 0x02,
-        Ack             = 0x03,
-        Log             = 0x04,
-        LoginRequest    = 0x05,
-        LoginResponse   = 0x06,
-        DynLabelRequest = 0x07,
-        DynLabelResponse = 0x08,
-        LoginInfoChange = 0x09,
-        UserInfoRequest = 0x0a,
-        UserInfoResponse = 0x0b,
-        ChangePasswordRequest = 0x0c,
-        ChangePasswordResponse = 0x0d
+        private Dictionary<Guid, BooleanResult> m_cpResults = new Dictionary<Guid, BooleanResult>();
+        public List<Interfaces.IPluginChangePassword> LoadedPlugins { get; set; }
+
+        public void AddResult(Guid pluginId, BooleanResult result)
+        {
+            if (m_cpResults.ContainsKey(pluginId))
+                m_cpResults[pluginId] = result;
+            else
+                m_cpResults.Add(pluginId, result);
+        }
+
+
+        public BooleanResult GetResult(Guid pluginGuid)
+        {
+            return m_cpResults[pluginGuid];
+        }
+
+        public IEnumerable<Guid> GetPlugins()
+        {
+            foreach (KeyValuePair<Guid, BooleanResult> kv in m_cpResults)
+            {
+                yield return kv.Key;
+            }
+        }
+
     }
 }

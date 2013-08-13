@@ -220,6 +220,8 @@ namespace pGina.Service.Impl
                     return HandleLoginInfoChange(new LoginInfoChangeMessage(msg)).ToDict();
                 case MessageType.UserInfoRequest:
                     return HandleUserInfoRequest(new UserInformationRequestMessage(msg)).ToDict();
+                case MessageType.ChangePasswordRequest:
+                    return HandleChangePasswordRequest(new ChangePasswordRequestMessage(msg)).ToDict();
                 default:
                     return null;                // Unknowns get disconnected
             }
@@ -388,6 +390,71 @@ namespace pGina.Service.Impl
             }
 
             return motd;
+        }
+
+        private ChangePasswordResponseMessage HandleChangePasswordRequest(ChangePasswordRequestMessage msg)
+        {
+            try
+            {
+                m_logger.DebugFormat("Processing ChangePasswordRequest for: {0} domain: {1}",
+                    msg.Username, msg.Domain);
+
+                ChangePasswordInfo cpInfo = new ChangePasswordInfo()
+                {
+                    Username = msg.Username,
+                    Domain = msg.Domain,
+                    OldPassword = msg.OldPassword,
+                    NewPassword = msg.NewPassword
+                };
+
+                ChangePasswordPluginActivityInfo pluginInfo = new ChangePasswordPluginActivityInfo();
+                pluginInfo.LoadedPlugins = PluginLoader.GetOrderedPluginsOfType<IPluginChangePassword>();
+                BooleanResult finalResult = new BooleanResult { Success = false, Message = "" };
+
+                // One success means the final result is a success, and we return the message from
+                // the last success.  Otherwise, we return the message from the last failure.
+                foreach ( IPluginChangePassword plug in PluginLoader.GetOrderedPluginsOfType<IPluginChangePassword>() ) 
+                {
+                    // Execute the plugin
+                    m_logger.DebugFormat("ChangePassword: executing {0}", plug.Uuid);
+                    BooleanResult pluginResult = plug.ChangePassword(cpInfo, pluginInfo);
+
+                    // Add result to our list of plugin results
+                    pluginInfo.AddResult(plug.Uuid, pluginResult);
+
+                    m_logger.DebugFormat("ChangePassword: result from {0} is {1} message: {2}",
+                        plug.Uuid, pluginResult.Success, pluginResult.Message);
+
+                    if (pluginResult.Success)
+                    {
+                        finalResult.Success = true;
+                        finalResult.Message = pluginResult.Message;
+                    }
+                    else
+                    {
+                        if (!finalResult.Success)
+                        {
+                            finalResult.Message = pluginResult.Message;
+                        }
+                    }
+                }
+
+                m_logger.DebugFormat("ChangePassword: returning final result {0}, message {1}",
+                    finalResult.Success, finalResult.Message);
+
+                return new ChangePasswordResponseMessage()
+                {
+                    Result = finalResult.Success,
+                    Message = finalResult.Message,
+                    Username = msg.Username,
+                    Domain = msg.Domain
+                };
+            }
+            catch (Exception e)
+            {
+                m_logger.ErrorFormat("Internal error, unexpected exception while handling change password request: {0}", e);
+                return new ChangePasswordResponseMessage() { Result = false, Message = "Internal error" };
+            }
         }
     }
 }

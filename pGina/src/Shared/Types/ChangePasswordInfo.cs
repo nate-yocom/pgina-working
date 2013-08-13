@@ -1,5 +1,5 @@
 ﻿/*
-	Copyright (c) 2013, pGina Team
+	Copyright (c) 2011, pGina Team
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without
@@ -28,24 +28,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Security.Principal;
 
-namespace pGina.Core.Messages
+namespace pGina.Shared.Types
 {
-    public enum MessageType
+    public class ChangePasswordInfo
     {
-        Unknown         = 0x00,
-        Hello           = 0x01,
-        Disconnect      = 0x02,
-        Ack             = 0x03,
-        Log             = 0x04,
-        LoginRequest    = 0x05,
-        LoginResponse   = 0x06,
-        DynLabelRequest = 0x07,
-        DynLabelResponse = 0x08,
-        LoginInfoChange = 0x09,
-        UserInfoRequest = 0x0a,
-        UserInfoResponse = 0x0b,
-        ChangePasswordRequest = 0x0c,
-        ChangePasswordResponse = 0x0d
+        public string Username { get; set; }
+        public string Domain { get; set; }
+        public string OldPassword { get; set; }
+        public string NewPassword { get; set; }
     }
 }
